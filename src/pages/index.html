@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Agente de Microlearning — Intellih</title>
+  <meta name="description" content="MVP de agente de microlearning com escolha de tema, upload de material e simulados adaptativos." />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root{--brand:#c44b04;--bg:#0a0a0a;--fg:#ffffff;--card:#121212;--muted:#bfbfbf;--stroke:#1e1e1e}
+    html,body{height:100%}
+    body{background:var(--bg);color:var(--fg);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,"Noto Sans","Helvetica Neue",sans-serif}
+    .glass{background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.04));backdrop-filter:blur(8px);border:1px solid var(--stroke)}
+    .brand{color:var(--brand)}
+    .btn{background:var(--brand);color:#fff;border-radius:16px;padding:.75rem 1rem;font-weight:600;}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .chip{border:1px solid var(--stroke);border-radius:999px;padding:.35rem .7rem;color:var(--muted)}
+    .dot{width:10px;height:10px;border-radius:50%;background:#10b981;display:inline-block;margin-left:.5rem;}
+    .kbd{border:1px solid var(--stroke);border-radius:6px;padding:2px 6px;color:var(--muted)}
+    .card{background:var(--card);border:1px solid var(--stroke)}
+    .link{color:#f5f5f5;text-decoration:underline;text-underline-offset:4px}
+  </style>
+</head>
+<body>
+  <header class="max-w-5xl mx-auto px-4 pt-8">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-2xl flex items-center justify-center" style="background:var(--brand)">
+          <span class="font-black">IA</span>
+        </div>
+        <div>
+          <h1 class="text-xl font-bold">Agente de Microlearning <span class="dot" title="online"></span></h1>
+          <p class="text-sm text-[var(--muted)]">Powered by Intellih · Método Barbara Oakley</p>
+        </div>
+      </div>
+      <div class="hidden md:flex items-center gap-2">
+        <span class="chip">Sessão salva localmente</span>
+        <button id="btn-reset" class="chip hover:text-white" title="Limpar estado"><span class="kbd">Reset</span></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-3 gap-6">
+    <!-- COL 1: Configuração -->
+    <section class="lg:col-span-1 card rounded-2xl p-5">
+      <h2 class="text-lg font-semibold mb-2">1) Configurar estudo</h2>
+      <p class="text-sm text-[var(--muted)] mb-4">Escolha um <strong>tema</strong> ou faça <strong>upload</strong> do material (PDF/TXT/DOCX*) que deseja estudar. O agente criará microlições e simulados.</p>
+
+      <label class="block text-sm font-medium mb-1">Tema (opcional)</label>
+      <input id="inp-tema" type="text" placeholder="Ex.: IA Generativa, SQL, Biologia Celular" class="w-full rounded-xl bg-transparent border border-[var(--stroke)] px-3 py-2 mb-3" />
+
+      <div class="text-center my-2 text-xs text-[var(--muted)]">ou</div>
+
+      <label class="block text-sm font-medium mb-1">Upload de material</label>
+      <input id="inp-file" type="file" accept=".pdf,.txt,.doc,.docx" class="w-full text-sm" />
+      <p class="text-[11px] text-[var(--muted)] mt-2">*Leitura direta otimizada para <strong>TXT</strong>. Para PDF/DOCX, este MVP extrai texto básico (não processa imagens/OCR). Em produção, use OCR + parser avançado.</p>
+
+      <div class="mt-4 grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-sm font-medium mb-1">Padrão do simulado</label>
+          <select id="sel-pad" class="w-full rounded-xl bg-transparent border border-[var(--stroke)] px-3 py-2">
+            <option value="ENEM">ENEM</option>
+            <option value="ENAMED">ENAMED</option>
+            <option value="OAB">OAB</option>
+            <option value="CESPE">CESPE</option>
+            <option value="GERAL">Geral</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Duração (dias)</label>
+          <select id="sel-dias" class="w-full rounded-xl bg-transparent border border-[var(--stroke)] px-3 py-2">
+            <option>5</option>
+            <option>7</option>
+            <option>10</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="btn-gerar" class="btn w-full mt-5">Gerar plano</button>
+      <p id="status" class="text-xs text-[var(--muted)] mt-2"></p>
+
+      <hr class="my-5 border-[var(--stroke)]" />
+
+      <h3 class="text-sm font-semibold mb-2">Exportar / Importar</h3>
+      <div class="flex items-center gap-2">
+        <button id="btn-export" class="chip hover:text-white">Exportar plano (.json)</button>
+        <label class="chip hover:text-white cursor-pointer">Importar
+          <input id="inp-import" type="file" accept="application/json" class="hidden" />
+        </label>
+      </div>
+    </section>
+
+    <!-- COL 2: Plano & Lições -->
+    <section class="lg:col-span-2 card rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="text-lg font-semibold">2) Plano de microlearning</h2>
+        <div class="text-sm text-[var(--muted)]" id="ctx"></div>
+      </div>
+
+      <div id="plano" class="space-y-3"></div>
+
+      <div id="acoes" class="mt-4 hidden">
+        <button id="btn-licao" class="btn">Iniciar próxima lição</button>
+        <button id="btn-simulado" class="chip hover:text-white ml-2">Gerar simulado agora</button>
+      </div>
+
+      <div id="licao" class="mt-6 hidden">
+        <div class="glass rounded-2xl p-4">
+          <h3 class="font-semibold mb-2" id="licao-titulo"></h3>
+          <p class="text-sm leading-relaxed" id="licao-conteudo"></p>
+        </div>
+        <div id="quiz" class="mt-4"></div>
+        <div id="licao-rodape" class="mt-4 text-sm text-[var(--muted)]"></div>
+      </div>
+
+      <div id="simulado" class="mt-6 hidden">
+        <h3 class="font-semibold mb-2">Simulado (<span id="sim-pad"></span>)</h3>
+        <div id="sim-questoes" class="space-y-4"></div>
+        <div class="mt-4 flex items-center gap-3">
+          <button id="btn-corrigir" class="btn">Corrigir</button>
+          <button id="btn-refazer" class="chip hover:text-white">Refazer</button>
+        </div>
+        <div id="sim-resultado" class="mt-3 text-sm"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="max-w-5xl mx-auto px-4 pb-10 text-xs text-[var(--muted)]">
+    <p>Este é um MVP local (sem backend). Para produção, integre parsing robusto (PDF/DOCX), embeddings e geração com LLM. © Intellih</p>
+  </footer>
+
+  <script>
+    // --- Estado global simples ---
+    const state = {
+      tema: '',
+      padrao: 'ENEM',
+      dias: 5,
+      materialTexto: '',
+      plano: [],
+      progresso: { prox: 1, acertos: 0, erros: 0 },
+    };
+
+    // Persistência local
+    const KEY = 'intellih_microlearning_v1';
+    function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+    function load(){ try{ const s = JSON.parse(localStorage.getItem(KEY)); if(s){ Object.assign(state, s); } }catch(e){} }
+    load();
+
+    // Helpers básicos
+    const $ = sel => document.querySelector(sel);
+    function setStatus(msg){ $('#status').textContent = msg || ''; }
+    function truncate(str, n=220){ return (str||'').length>n ? str.slice(0,n)+'…' : str; }
+
+    // UI refs
+    const inpTema = $('#inp-tema');
+    const inpFile = $('#inp-file');
+    const selPad = $('#sel-pad');
+    const selDias = $('#sel-dias');
+    const planoDiv = $('#plano');
+    const ctxDiv = $('#ctx');
+
+    // Inicializa UI com estado salvo
+    function initUI(){
+      inpTema.value = state.tema || '';
+      selPad.value = state.padrao || 'ENEM';
+      selDias.value = String(state.dias || 5);
+      renderPlano();
+      if(state.plano?.length){ $('#acoes').classList.remove('hidden'); }
+      updateCtx();
+    }
+
+    function updateCtx(){
+      const src = state.materialTexto ? 'Material enviado' : (state.tema ? 'Tema escolhido' : '—');
+      ctxDiv.textContent = `${src} · Padrão: ${state.padrao} · ${state.dias} dias`;
+    }
+
+    // Leitura simples de arquivo (TXT preferível); para PDF/DOCX, tentamos extrair texto básico se for texto puro no arquivo
+    inpFile.addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0];
+      if(!f){ return; }
+      setStatus('Lendo arquivo…');
+      const text = await fileToText(f);
+      state.materialTexto = text || '';
+      state.tema = state.tema || (f.name.replace(/\.(pdf|txt|docx?|rtf)$/i,'').replace(/[_-]/g,' '));
+      save(); initUI();
+      setStatus(text ? `Material carregado (${f.name}, ${text.length} chars)` : 'Não foi possível extrair texto deste arquivo. Converta para .txt para melhor resultado.');
+    });
+
+    async function fileToText(file){
+      // Estratégia simples: tentar como texto; PDFs binários não funcionarão aqui.
+      return new Promise((res)=>{
+        const reader = new FileReader();
+        reader.onload = ()=> res(reader.result?.toString()||'');
+        reader.onerror = ()=> res('');
+        reader.readAsText(file, 'utf-8');
+      });
+    }
+
+    // Geração de plano (heurística local para MVP)
+    $('#btn-gerar').addEventListener('click', ()=>{
+      state.tema = (inpTema.value || state.tema || '').trim();
+      state.padrao = selPad.value;
+      state.dias = parseInt(selDias.value||'5',10);
+      if(!state.tema && !state.materialTexto){ alert('Defina um tema ou envie um material.'); return; }
+      const topicos = extrairTopicos(state.materialTexto, state.tema, state.dias);
+      state.plano = construirPlano(topicos, state.dias);
+      state.progresso = { prox: 1, acertos: 0, erros: 0 };
+      save();
+      renderPlano();
+      $('#acoes').classList.remove('hidden');
+      updateCtx();
+      setStatus('Plano gerado com sucesso.');
+    });
+
+    function extrairTopicos(texto, tema, n){
+      // Se houver material, tenta extrair tópicos por quebras de linha e títulos simples.
+      let candidatos = [];
+      if(texto){
+        const linhas = texto.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+        // Pega linhas com aparência de títulos ou frases fortes
+        candidatos = linhas.filter(s => /(^[A-ZÁ-Ú0-9].{0,80}$)|(^#+\s)/.test(s)).slice(0, 50);
+        if(candidatos.length < n){
+          // Adiciona sentenças mais longas como tópicos
+          const sent = texto.split(/(?<=[\.!?])\s+/).filter(s=>s.length>40 && s.length<200);
+          candidatos = candidatos.concat(sent.slice(0, 50 - candidatos.length));
+        }
+      }
+      if(!candidatos.length){
+        // Fallback por tema
+        const base = [`Fundamentos de ${tema||'o tema'}`, `Vocabulário e conceitos chave`, `Exemplos práticos em ${tema||'contexto'}`, `Erros comuns e boas práticas`, `Revisão guiada e mapa mental`, `Aplicações no mundo real`, `Desafio prático`];
+        return base.slice(0, Math.max(5, n));
+      }
+      // Normaliza e limita
+      const uniq = Array.from(new Set(candidatos.map(s=>s.replace(/^#+\s*/, '').replace(/\s{2,}/g,' ').trim())));
+      return uniq.slice(0, Math.max(5, n));
+    }
+
+    function construirPlano(topicos, dias){
+      const plano = [];
+      const labels = ['Fundamentos','Aplicações','Exercícios','Revisão','Simulado'];
+      for(let i=0;i<dias;i++){
+        const foco = labels[Math.min(i, labels.length-1)];
+        plano.push({ dia:i+1, titulo:`Dia ${i+1} — ${foco}`, topico: topicos[i % topicos.length] });
+      }
+      return plano;
+    }
+
+    function renderPlano(){
+      planoDiv.innerHTML = '';
+      if(!state.plano?.length){
+        planoDiv.innerHTML = `<p class="text-sm text-[var(--muted)]">Nenhum plano gerado ainda. Preencha as opções à esquerda e clique <strong>Gerar plano</strong>.</p>`;
+        return;
+      }
+      state.plano.forEach(p=>{
+        const el = document.createElement('div');
+        el.className = 'glass rounded-xl p-3';
+        el.innerHTML = `<div class="flex items-start justify-between gap-3">
+          <div>
+            <div class="text-sm font-semibold">${p.titulo}</div>
+            <div class="text-sm text-[var(--muted)]">Foco: ${p.topico}</div>
+          </div>
+          <div class="text-xs chip">${p.dia === state.progresso.prox ? 'Próxima' : (p.dia < state.progresso.prox ? 'Concluída' : 'Agendada')}</div>
+        </div>`;
+        planoDiv.appendChild(el);
+      });
+    }
+
+    // --- Lição ---
+    $('#btn-licao').addEventListener('click', ()=>{
+      iniciarLicao();
+    });
+
+    function iniciarLicao(){
+      const idx = (state.progresso.prox-1);
+      const bloco = state.plano[idx] || state.plano[state.plano.length-1];
+      const base = state.materialTexto || `Notas do tema ${state.tema}.`;
+      const conteudo = gerarConteudoLicao(bloco.topico, base);
+      $('#licao-titulo').textContent = bloco.titulo + ' · ' + (state.tema || 'Seu material');
+      $('#licao-conteudo').textContent = conteudo.explica;
+      $('#licao-rodape').textContent = 'Dica Barbara Oakley: reveja rapidamente esta lição amanhã (prática espaçada) e faça uma questão de recuperação ativa.';
+      $('#licao').classList.remove('hidden');
+      // Gera uma questão de fixação
+      const q = gerarQuestaoUnica(conteudo, state.padrao);
+      renderQuiz([q], 'quiz');
+    }
+
+    function gerarConteudoLicao(topico, textoBase){
+      const resumo = truncate(textoBase.split(/\n+/).find(l=>l.toLowerCase().includes(topico.toLowerCase())) || textoBase, 500);
+      const explica = `Conceito: ${topico}. ` + (resumo ? `Resumo do material: ${resumo}` : `Explanação introdutória sobre ${topico}, com foco em exemplos práticos e erros comuns.`);
+      return { explica, topico };
+    }
+
+    function gerarQuestaoUnica(ctx, padrao){
+      const stem = `Sobre \"${ctx.topico}\", assinale a alternativa correta.`;
+      const correta = `A alternativa que explica corretamente ${ctx.topico} conforme o material.`;
+      const d1 = `Afirma que ${ctx.topico} é o oposto do descrito.`;
+      const d2 = `Desvia para conceito relacionado, mas não essencial.`;
+      const d3 = `Exemplo anedótico sem base no texto.`;
+      return { stem, opcoes: embaralhar([correta,d1,d2,d3]), correta: correta };
+    }
+
+    function renderQuiz(questoes, mountId){
+      const mount = document.getElementById(mountId);
+      mount.innerHTML = '';
+      questoes.forEach((q, i)=>{
+        const el = document.createElement('div');
+        el.className = 'card rounded-xl p-4 border border-[var(--stroke)]';
+        el.innerHTML = `<div class="text-sm font-medium mb-2">${i+1}) ${q.stem}</div>` +
+          q.opcoes.map((opt,j)=>`<label class="flex items-start gap-2 text-sm mb-1">
+            <input type="radio" name="q${i}" value="${opt}" class="mt-1" />
+            <span>${opt}</span>
+          </label>`).join('');
+        mount.appendChild(el);
+      });
+    }
+
+    // --- Simulado ---
+    $('#btn-simulado').addEventListener('click', ()=>{
+      gerarSimulado();
+    });
+
+    function gerarSimulado(){
+      const pad = state.padrao;
+      $('#sim-pad').textContent = pad;
+      const base = (state.materialTexto || (`Anotações sobre ${state.tema}. ${state.plano.map(p=>p.topico).join('. ')}`));
+      const stems = criarStems(base, 5);
+      const qs = stems.map(st => criarQuestaoDePadrao(st, pad));
+      state.__simulado = qs;
+      $('#sim-questoes').innerHTML = '';
+      renderQuiz(qs, 'sim-questoes');
+      $('#sim-resultado').textContent='';
+      $('#simulado').classList.remove('hidden');
+    }
+
+    function criarStems(texto, n){
+      const sent = texto.split(/(?<=[\.!?])\s+/).filter(s=>s.length>40 && s.length<220);
+      const base = sent.length? sent : extrairTopicos(texto, state.tema, n);
+      return base.slice(0,n).map(s=>s.replace(/\s+/g,' ').trim());
+    }
+
+    function criarQuestaoDePadrao(stemBase, pad){
+      let stem = stemBase;
+      if(pad==='ENEM'){ stem = `Considere o trecho: “${truncate(stemBase,140)}”. A partir dele, conclui-se que:`; }
+      if(pad==='ENAMED'){ stem = `Paciente hipotético: ${truncate(stemBase,130)}. Qual a conduta mais adequada?`; }
+      if(pad==='OAB'){ stem = `À luz do ordenamento, avalie: ${truncate(stemBase,140)}. Assinale a correta.`; }
+      if(pad==='CESPE'){ stem = `Julgue o item: ${truncate(stemBase,160)}.`; }
+      if(pad==='GERAL'){ stem = `${truncate(stemBase,160)} O que está correto?`; }
+      const correta = `Interpretação consistente com o texto-base.`;
+      const d1 = `Conclusão que extrapola o texto.`;
+      const d2 = `Afirmação parcialmente verdadeira, porém incompleta.`;
+      const d3 = `Alternativa que contradiz a premissa.`;
+
+      if(pad==='CESPE'){
+        // V/F
+        const vf = Math.random()>.5;
+        return { stem, opcoes: ['Verdadeiro','Falso'], correta: vf? 'Verdadeiro':'Falso' };
+      }
+      return { stem, opcoes: embaralhar([correta,d1,d2,d3]), correta };
+    }
+
+    $('#btn-corrigir').addEventListener('click', ()=>{
+      const qs = state.__simulado || [];
+      if(!qs.length){ return; }
+      const inputs = Array.from(document.querySelectorAll('#sim-questoes input[type="radio"]:checked'));
+      let acertos = 0; let respondidas = 0;
+      qs.forEach((q,i)=>{
+        const sel = inputs.find(inp=>inp.name===`q${i}`);
+        if(sel){ respondidas++; if(sel.value===q.correta) acertos++; }
+      });
+      const msg = `Você acertou ${acertos}/${qs.length}. (${respondidas} respondidas).`;
+      $('#sim-resultado').textContent = msg + ' Pontos fortes e fracos serão usados para adaptar próximas lições.';
+      // Atualiza progresso (conta como um dia concluído)
+      state.progresso.acertos += acertos; state.progresso.erros += (qs.length - acertos);
+      state.progresso.prox = Math.min(state.progresso.prox + 1, state.plano.length+1);
+      save(); renderPlano();
+    });
+
+    $('#btn-refazer').addEventListener('click', gerarSimulado);
+
+    // Export/Import
+    $('#btn-export').addEventListener('click', ()=>{
+      const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'plano_microlearning.json'; a.click();
+    });
+    $('#inp-import').addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0]; if(!f) return;
+      const text = await fileToText(f);
+      try{ const obj = JSON.parse(text); Object.assign(state, obj); save(); initUI(); setStatus('Importado com sucesso.'); }
+      catch(err){ alert('Arquivo inválido.'); }
+    });
+
+    // Reset
+    $('#btn-reset').addEventListener('click', ()=>{
+      if(confirm('Limpar progresso e dados locais?')){
+        localStorage.removeItem(KEY); location.reload();
+      }
+    });
+
+    // Utilitários
+    function embaralhar(arr){
+      const a = arr.slice();
+      for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+      return a;
+    }
+
+    // Boot
+    initUI();
+  </script>
+</body>
+</html>
