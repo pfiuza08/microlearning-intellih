@@ -187,6 +187,7 @@
   </footer>
 
   <script>
+    // ===== Tema =====
     const themeBtn = document.getElementById('btn-theme');
     const body = document.body;
 
@@ -217,6 +218,80 @@
 
     const savedTheme = localStorage.getItem('liora_theme');
     setTheme(savedTheme || 'dark');
+
+    // ===== Geração dinâmica de sessões =====
+    const STATE_KEY = 'liora_study_v2';
+    const state = { tema:'', padrao:'ENEM', dias:5, materialTexto:'', plano:[] };
+
+    const $ = id => document.getElementById(id);
+    const els = { inpTema:$('inp-tema'), inpFile:$('inp-file'), selPad:$('sel-pad'), selDias:$('sel-dias'), btnGerar:$('btn-gerar'), status:$('status'), ctx:$('ctx'), plano:$('plano') };
+
+    const save = () => localStorage.setItem(STATE_KEY, JSON.stringify(state));
+    const load = () => { try { Object.assign(state, JSON.parse(localStorage.getItem(STATE_KEY)) || {}); } catch(e){} };
+    load();
+
+    const setStatus = msg => els.status.textContent = msg;
+    const updateCtx = () => els.ctx.textContent = `${state.materialTexto ? 'Material enviado' : (state.tema || 'Sem tema')} · Formato: ${state.padrao} · ${state.dias} sessões`;
+
+    function extrairTopicos(texto, tema, n){
+      let candidatos = [];
+      if(texto){
+        const linhas = texto.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+        candidatos = linhas.filter(s=>s.split(' ').length<10).slice(0,60);
+      }
+      if(!candidatos.length){
+        candidatos = [`Introdução ao tema ${tema}`, 'Conceitos principais', 'Aplicações práticas', 'Revisão', 'Síntese final'];
+      }
+      return candidatos.slice(0,n);
+    }
+
+    function descrever(topico, tema){
+      return `Sessão sobre ${topico}, parte do tema ${tema}. Revisar conceitos e aplicar em exemplos.`;
+    }
+
+    function construirPlano(topicos,dias,tema){
+      const plano=[];
+      for(let i=0;i<dias;i++){
+        const t=topicos[i%topicos.length];
+        plano.push({dia:i+1,titulo:`Sessão ${i+1}`,topico:t,descricao:descrever(t,tema)});
+      }
+      return plano;
+    }
+
+    function renderPlano(){
+      els.plano.innerHTML='';
+      if(!state.plano.length){
+        els.plano.innerHTML='<p class="text-sm text-[var(--muted)]">Crie um plano de estudo ao lado e ele aparecerá aqui.</p>';
+        return;
+      }
+      state.plano.forEach(p=>{
+        const div=document.createElement('div');
+        div.className='session-card';
+        div.innerHTML=`<div class="text-sm font-semibold mb-1">${p.titulo}</div><div class="text-sm text-[var(--muted)] mb-1">${p.topico}</div><p class="text-sm">${p.descricao}</p>`;
+        els.plano.appendChild(div);
+      });
+    }
+
+    if(els.btnGerar){
+      els.btnGerar.addEventListener('click',()=>{
+        state.tema=els.inpTema.value.trim();
+        state.padrao=els.selPad.value;
+        state.dias=parseInt(els.selDias.value,10);
+        if(!state.tema && !state.materialTexto){
+          alert('Defina um tema ou envie um material.');
+          return;
+        }
+        const topicos=extrairTopicos(state.materialTexto,state.tema,state.dias);
+        state.plano=construirPlano(topicos,state.dias,state.tema);
+        save();
+        updateCtx();
+        renderPlano();
+        setStatus('Plano criado com sucesso!');
+      });
+    }
+
+    renderPlano();
+    updateCtx();
   </script>
 </body>
 </html>
