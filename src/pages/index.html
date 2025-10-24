@@ -7,6 +7,9 @@
   <meta name="description" content="Liora é um espaço inteligente e tranquilo de estudo guiado, com temas personalizáveis e simulados interativos." />
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+  </script>
   <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
   <style>
     :root {
@@ -323,3 +326,4 @@
   </script>
 </body>
 </html>
+
