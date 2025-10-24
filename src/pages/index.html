@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Liora — Espaço de Estudo</title>
   <meta name="description" content="Liora é um espaço inteligente e tranquilo de estudo guiado, com temas personalizáveis e simulados interativos." />
-
-  <!-- Frameworks -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
@@ -15,9 +13,43 @@
     }
   </script>
   <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
+  <style>
+    :root { --brand:#c44b04; --bg:#0b0b0b; --fg:#ffffff; --card:#151515; --muted:#bfbfbf; --stroke:#252525; --shadow:0 2px 8px rgba(0,0,0,0.4); }
+    body.light { --brand:#f4a261; --bg:#faf7f2; --fg:#1e1e1e; --card:#ffffff; --muted:#6b6b6b; --stroke:#e0ddd8; --shadow:0 2px 10px rgba(0,0,0,0.1); }
+    html, body { height:100%; transition: background-color 0.4s ease, color 0.4s ease; }
+    body { background:var(--bg); color:var(--fg); font-family:'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif; line-height:1.7; opacity:1; transition: opacity 0.4s ease, background-color 0.4s ease, color 0.4s ease; }
+    body.fading { opacity:0; }
 
-  <!-- Estilos -->
-  <link rel="stylesheet" href="style.css" />
+    .card { background:var(--card); border:1px solid var(--stroke); border-radius:1rem; box-shadow:var(--shadow); transition:background-color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease; }
+    .card:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.5); }
+
+    .btn { background:var(--brand); color:#fff; border-radius:16px; padding:.7rem 1rem; font-weight:600; transition:background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; box-shadow:0 0 6px rgba(196,75,4,0.4); }
+    .btn:hover { background:#d75b0a; transform:translateY(-1px); box-shadow:0 0 10px rgba(196,75,4,0.6); }
+
+    .chip { border:1px solid var(--stroke); border-radius:999px; padding:.35rem .7rem; color:var(--muted); transition:background 0.3s ease, color 0.3s ease; display:inline-flex; align-items:center; justify-content:center; }
+    .chip:hover { background:var(--brand); color:#fff; }
+
+    #btn-theme { font-size:1rem; cursor:pointer; transform:rotate(0deg); }
+    #btn-theme.rotate { transform:rotate(180deg); }
+
+    .dot { width:10px; height:10px; border-radius:50%; background:#10b981; display:inline-block; margin-left:.5rem; }
+
+    .loading { display:inline-block; animation:spin 1s linear infinite; }
+    @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+    input, select { background:transparent; border:1px solid var(--stroke); border-radius:8px; padding:.5rem .75rem; width:100%; color:var(--fg); transition:border 0.3s ease, box-shadow 0.3s ease; }
+    input:focus, select:focus { border-color:var(--brand); box-shadow:0 0 0 2px rgba(196,75,4,0.3); outline:none; }
+
+    .section-title { font-weight:600; color:var(--brand); }
+    .session-card, .qcard { background:var(--card); border:1px solid var(--stroke); border-radius:1rem; padding:1rem; box-shadow:var(--shadow); }
+    .opt { border:1px solid var(--stroke); border-radius:10px; padding:.6rem .8rem; cursor:pointer; transition: border-color .2s ease; }
+    .opt:hover { border-color:var(--brand); }
+    .opt.correct { border-color:#10b981; }
+    .opt.wrong { border-color:#ef4444; }
+
+    .bar { width:100%; height:10px; background:rgba(255,255,255,0.06); border-radius:9999px; overflow:hidden; border:1px solid var(--stroke); }
+    .bar > div { height:100%; background:var(--brand); width:0%; transition:width .3s ease; }
+  </style>
 </head>
 
 <body class="dark">
@@ -39,11 +71,10 @@
   </header>
 
   <main class="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-3 gap-6">
+    <!-- Configurar estudo -->
     <section class="lg:col-span-1 card p-5">
       <h2 class="section-title mb-1">Configurar estudo</h2>
-      <p class="text-sm text-[var(--muted)] mb-4">
-        Escolha um tema ou envie seu material para gerar um plano personalizado de aprendizado.
-      </p>
+      <p class="text-sm text-[var(--muted)] mb-4">Escolha um tema ou envie seu material para gerar um plano personalizado de aprendizado.</p>
 
       <label class="block text-sm font-medium mb-1">Tema</label>
       <input id="inp-tema" type="text" placeholder="Ex.: IA Generativa, História, Biologia" class="mb-3" />
@@ -52,14 +83,13 @@
 
       <label class="block text-sm font-medium mb-1">Upload de material</label>
       <input id="inp-file" type="file" class="text-sm" />
-      <p class="text-[11px] text-[var(--muted)] mt-2">
-        Envie um arquivo <strong>TXT</strong>, <strong>PDF</strong> ou <strong>DOCX</strong> para gerar o plano.
-      </p>
+      <p class="text-[11px] text-[var(--muted)] mt-2">Envie um arquivo <strong>TXT</strong>, <strong>PDF</strong> ou <strong>DOCX</strong> para gerar o plano.</p>
 
       <button id="btn-gerar" class="btn w-full mt-5">Gerar plano de estudo</button>
       <p id="status" class="text-xs text-[var(--muted)] mt-2"></p>
     </section>
 
+    <!-- Plano gerado -->
     <section class="lg:col-span-2 card p-5">
       <div class="flex items-center justify-between mb-3">
         <h2 class="section-title">Seu plano de estudo</h2>
@@ -68,6 +98,7 @@
       <div id="plano" class="space-y-3"></div>
     </section>
 
+    <!-- Simulados -->
     <section class="lg:col-span-3 card p-5">
       <div class="flex items-center justify-between mb-3">
         <h2 class="section-title">Gerar simulado</h2>
@@ -89,8 +120,30 @@
           <label class="block text-sm font-medium mb-1">Formato</label>
           <select id="sel-formato"></select>
         </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Quantidade</label>
+          <select id="sel-qtd">
+            <option>5</option>
+            <option>10</option>
+            <option>15</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Idioma</label>
+          <select id="sel-lang">
+            <option value="pt">Português</option>
+            <option value="en">Inglês</option>
+          </select>
+        </div>
         <div class="flex items-end"><button id="btn-simulado" class="btn w-full">Gerar simulado</button></div>
       </div>
+
+      <div class="mt-4">
+        <div class="bar"><div id="bar-progress"></div></div>
+        <div id="resultado" class="mt-2 text-sm text-[var(--muted)]"></div>
+      </div>
+
+      <div id="simulado" class="mt-4 space-y-3"></div>
     </section>
   </main>
 
@@ -98,7 +151,44 @@
     <p>Liora — um ambiente de estudo guiado e inspirador. © Intellih</p>
   </footer>
 
-  <!-- Scripts -->
-  <script src="scripts/main.js"></script>
+  <script>
+    // === Tema ===
+    const themeBtn = document.getElementById('btn-theme');
+    const body = document.body;
+    function setTheme(mode){ body.classList.add('fading'); themeBtn.classList.add('rotate'); setTimeout(()=>{ if(mode==='light'){ body.classList.add('light'); localStorage.setItem('liora_theme','light'); themeBtn.textContent='☀️'; } else { body.classList.remove('light'); localStorage.setItem('liora_theme','dark'); themeBtn.textContent='🌙'; } setTimeout(()=>{ body.classList.remove('fading'); themeBtn.classList.remove('rotate'); },200); },150); }
+    themeBtn.addEventListener('click',()=>{ const current = body.classList.contains('light') ? 'light':'dark'; setTheme(current==='light'?'dark':'light'); });
+    setTheme(localStorage.getItem('liora_theme')||'dark');
+
+    // === Estado global ===
+    const state = { tema:'', dias:5, materialTexto:'', plano:[], simulado:{categoria:'', formato:'', lang:'pt', questoes:[], respostas:{}} };
+    const $ = id => document.getElementById(id);
+    const els = { selCat:$('sel-cat'), selFormato:$('sel-formato'), btnSim:$('btn-simulado') };
+
+    // === Formatos por categoria ===
+    const FORMATOS = {
+      concursos: [ {id:'cespe', label:'CESPE (Certo/Errado)'}, {id:'fgv', label:'FGV (5 alternativas)'}, {id:'vunesp', label:'VUNESP (4 alternativas)'} ],
+      exames:    [ {id:'enem', label:'ENEM (5 alternativas)'}, {id:'enade', label:'ENADE (objetivas)'}, {id:'enamed', label:'ENAMED (casos clínicos)'} ],
+      ti:        [ {id:'aws', label:'AWS (4 alternativas)'}, {id:'az900', label:'AZ-900 (4 alternativas)'}, {id:'gcp', label:'GCP (4 alternativas)'} ],
+      mf:        [ {id:'cpa10', label:'CPA-10 (5 alternativas)'}, {id:'cpa20', label:'CPA-20 (5 alternativas)'}, {id:'cea', label:'CEA (5 alternativas)'} ],
+      outros:    [ {id:'generico', label:'Geral (4 alternativas)'} ]
+    };
+
+    function hydrateFormatos(){
+      const cat = els.selCat.value || 'concursos';
+      const list = FORMATOS[cat] || [];
+      els.selFormato.innerHTML = list.map(f=>`<option value="${f.id}">${f.label}</option>`).join('');
+      atualizarBotao();
+    }
+
+    function atualizarBotao(){
+      const fmt = els.selFormato.value || '';
+      els.btnSim.textContent = fmt ? `Gerar simulado (${fmt.toUpperCase()})` : 'Gerar simulado';
+    }
+
+    els.selCat.addEventListener('change', ()=>{ hydrateFormatos(); atualizarBotao(); });
+    els.selFormato.addEventListener('change', atualizarBotao);
+
+    hydrateFormatos(); // inicializa com Concursos
+  </script>
 </body>
 </html>
