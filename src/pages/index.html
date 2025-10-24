@@ -43,9 +43,7 @@
       transition: opacity 0.4s ease, background-color 0.4s ease, color 0.4s ease;
     }
 
-    body.fading {
-      opacity:0;
-    }
+    body.fading { opacity:0; }
 
     .card {
       background:var(--card);
@@ -72,38 +70,21 @@
       border-radius:999px;
       padding:.35rem .7rem;
       color:var(--muted);
-      transition:background 0.3s ease, color 0.3s ease, transform 0.4s ease;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
+      transition:background 0.3s ease, color 0.3s ease;
+      display:inline-flex; align-items:center; justify-content:center;
     }
     .chip:hover { background:var(--brand); color:#fff; }
 
-    #btn-theme {
-      font-size:1rem;
-      cursor:pointer;
-      transform:rotate(0deg);
-    }
-    #btn-theme.rotate {
-      transform:rotate(180deg);
-    }
+    #btn-theme { font-size:1rem; cursor:pointer; transform:rotate(0deg); }
+    #btn-theme.rotate { transform:rotate(180deg); }
 
     .dot {
-      width:10px; height:10px; border-radius:50%; background:#10b981; display:inline-block; margin-left:.5rem;
+      width:10px; height:10px; border-radius:50%;
+      background:#10b981; display:inline-block; margin-left:.5rem;
     }
 
-    .loading {
-      display:inline-block;
-      animation:spin 1s linear infinite;
-    }
+    .loading { display:inline-block; animation:spin 1s linear infinite; }
     @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
-
-    .kbd {
-      border:1px solid var(--stroke);
-      border-radius:6px;
-      padding:2px 6px;
-      color:var(--muted);
-    }
 
     input, select {
       background:transparent;
@@ -121,9 +102,16 @@
     }
 
     .section-title { font-weight:600; color:var(--brand); }
-    .session-card { background:var(--card); border:1px solid var(--stroke); border-radius:1rem; padding:1rem; box-shadow:var(--shadow); }
+    .session-card {
+      background:var(--card);
+      border:1px solid var(--stroke);
+      border-radius:1rem;
+      padding:1rem;
+      box-shadow:var(--shadow);
+    }
   </style>
 </head>
+
 <body class="dark">
   <header class="max-w-5xl mx-auto px-4 pt-8">
     <div class="flex items-center justify-between">
@@ -137,7 +125,7 @@
       <div class="flex items-center gap-2">
         <button id="btn-theme" class="chip" title="Alternar tema">🌙</button>
         <span class="chip">Sessão salva</span>
-        <button id="btn-reset" class="chip" title="Limpar estado"><span class="kbd">Reset</span></button>
+        <button id="btn-reset" class="chip" title="Limpar estado">Reset</button>
       </div>
     </div>
   </header>
@@ -145,22 +133,24 @@
   <main class="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-3 gap-6">
     <section class="lg:col-span-1 card p-5">
       <h2 class="section-title mb-1">Configurar estudo</h2>
-      <p class="text-sm text-[var(--muted)] mb-4">Escolha um tema ou envie seu material para criar um plano personalizado com sessões de aprendizado.</p>
+      <p class="text-sm text-[var(--muted)] mb-4">
+        Escolha um tema ou envie seu material para gerar um plano personalizado de aprendizado.
+      </p>
 
       <label class="block text-sm font-medium mb-1">Tema</label>
-    <input id="inp-file" type="file"
-       accept=".pdf,application/pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
-       class="text-sm" />
+      <input id="inp-tema" type="text" placeholder="Ex.: IA Generativa, História, Biologia" class="mb-3" />
 
       <div class="text-center my-2 text-xs text-[var(--muted)]">ou</div>
 
       <label class="block text-sm font-medium mb-1">Upload de material</label>
-      <input id="inp-file" type="file" accept="*/*" class="text-sm" />
-      <p class="text-[11px] text-[var(--muted)] mt-2">Arquivos TXT, PDF e DOCX são suportados neste protótipo.</p>
+      <input id="inp-file" type="file"
+        accept=".pdf,application/pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
+        class="text-sm" />
+      <p class="text-[11px] text-[var(--muted)] mt-2">
+        Envie um arquivo <strong>TXT</strong>, <strong>PDF</strong> ou <strong>DOCX</strong> para gerar o plano.
+      </p>
 
-      <div class="mt-4 grid grid-cols-1">
-        <button id="btn-gerar" class="btn w-full">Gerar plano de estudo</button>
-      </div>
+      <button id="btn-gerar" class="btn w-full mt-5">Gerar plano de estudo</button>
       <p id="status" class="text-xs text-[var(--muted)] mt-2"></p>
     </section>
 
@@ -215,11 +205,14 @@
     const state = { tema:'', dias:5, materialTexto:'', plano:[] };
 
     const $ = id => document.getElementById(id);
-    const els = { inpTema:$('inp-tema'), inpFile:$('inp-file'), btnGerar:$('btn-gerar'), status:$('status'), ctx:$('ctx'), plano:$('plano') };
-
-    const save = () => localStorage.setItem(STATE_KEY, JSON.stringify(state));
-    const load = () => { try { Object.assign(state, JSON.parse(localStorage.getItem(STATE_KEY)) || {}); } catch(e){} };
-    load();
+    const els = {
+      inpTema:$('inp-tema'),
+      inpFile:$('inp-file'),
+      btnGerar:$('btn-gerar'),
+      status:$('status'),
+      ctx:$('ctx'),
+      plano:$('plano')
+    };
 
     const setStatus = msg => els.status.innerHTML = msg;
     const updateCtx = () => els.ctx.textContent = `${state.materialTexto ? 'Material enviado' : (state.tema || 'Sem tema')} · ${state.dias} sessões`;
@@ -229,7 +222,7 @@
       setStatus(`<span class='loading'>⏳</span> Processando arquivo...`);
 
       if(ext === 'txt'){
-        return new Promise((res)=>{
+        return new Promise(res=>{
           const reader = new FileReader();
           reader.onload = ()=> res(reader.result.toString());
           reader.readAsText(file,'utf-8');
@@ -243,7 +236,7 @@
         for(let i=1;i<=pdf.numPages;i++){
           const page = await pdf.getPage(i);
           const content = await page.getTextContent();
-          text += content.items.map(it=>it.str).join(' ') + '\n';
+          text += content.items.map(it=>it.str).join(' ') + '\\n';
         }
         setStatus(`✅ PDF lido com sucesso (${pdf.numPages} páginas)`);
         return text;
@@ -266,18 +259,16 @@
         const text = await readFileContent(f);
         if(text){
           state.materialTexto = text;
-          state.tema = state.tema || f.name.replace(/\.(pdf|txt|docx?)$/i,'');
-          save();
+          state.tema = state.tema || f.name.replace(/\\.(pdf|txt|docx?)$/i,'');
           updateCtx();
         }
       });
     }
 
-    // ===== Geração de plano =====
     function extrairTopicos(texto, tema, n){
       let candidatos = [];
       if(texto){
-        const linhas = texto.split(/\n+/).map(s=>s.trim()).filter(Boolean);
+        const linhas = texto.split(/\\n+/).map(s=>s.trim()).filter(Boolean);
         candidatos = linhas.filter(s=>s.split(' ').length<10).slice(0,60);
       }
       if(!candidatos.length){
@@ -308,7 +299,9 @@
       state.plano.forEach(p=>{
         const div=document.createElement('div');
         div.className='session-card';
-        div.innerHTML=`<div class="text-sm font-semibold mb-1">${p.titulo}</div><div class="text-sm text-[var(--muted)] mb-1">${p.topico}</div><p class="text-sm">${p.descricao}</p>`;
+        div.innerHTML=`<div class="text-sm font-semibold mb-1">${p.titulo}</div>
+                       <div class="text-sm text-[var(--muted)] mb-1">${p.topico}</div>
+                       <p class="text-sm">${p.descricao}</p>`;
         els.plano.appendChild(div);
       });
     }
@@ -316,14 +309,12 @@
     if(els.btnGerar){
       els.btnGerar.addEventListener('click',()=>{
         state.tema=els.inpTema.value.trim();
-        state.dias=5;
         if(!state.tema && !state.materialTexto){
           alert('Defina um tema ou envie um material.');
           return;
         }
         const topicos=extrairTopicos(state.materialTexto,state.tema,state.dias);
         state.plano=construirPlano(topicos,state.dias,state.tema);
-        save();
         updateCtx();
         renderPlano();
         setStatus('Plano criado com sucesso!');
@@ -335,4 +326,3 @@
   </script>
 </body>
 </html>
-
