@@ -1,7 +1,13 @@
 // ==========================================================
 // 🌙 GARANTE O TEMA ESCURO AO INICIAR
 // ==========================================================
-document.body.classList.add('dark');
+window.addEventListener('DOMContentLoaded', () => {
+  const body = document.body;
+  if (!body.classList.contains('light')) {
+    body.style.background = '#0b0b0b';
+    body.style.color = '#ffffff';
+  }
+});
 
 // ==========================================================
 // 🎨 TEMA (claro/escuro)
@@ -9,28 +15,31 @@ document.body.classList.add('dark');
 const themeBtn = document.getElementById('btn-theme');
 const body = document.body;
 
-function setTheme(mode){
-  body.classList.add('fading');
-  themeBtn.classList.add('rotate');
-  setTimeout(()=>{
-    if(mode==='light'){
-      body.classList.add('light');
-      localStorage.setItem('liora_theme','light');
-      themeBtn.textContent='☀️';
-    } else {
-      body.classList.remove('light');
-      localStorage.setItem('liora_theme','dark');
-      themeBtn.textContent='🌙';
-    }
-    setTimeout(()=>{ body.classList.remove('fading'); themeBtn.classList.remove('rotate'); },200);
-  },150);
+function applyTheme(mode) {
+  if (mode === 'light') {
+    body.classList.add('light');
+    localStorage.setItem('liora_theme', 'light');
+    themeBtn.textContent = '☀️';
+  } else {
+    body.classList.remove('light');
+    localStorage.setItem('liora_theme', 'dark');
+    themeBtn.textContent = '🌙';
+  }
 }
 
-themeBtn.addEventListener('click',()=>{
-  const current = body.classList.contains('light') ? 'light':'dark';
-  setTheme(current==='light'?'dark':'light');
-});
-setTheme(localStorage.getItem('liora_theme')||'dark');
+function toggleTheme() {
+  const current = body.classList.contains('light') ? 'light' : 'dark';
+  const next = current === 'light' ? 'dark' : 'light';
+  applyTheme(next);
+}
+
+if (themeBtn) {
+  themeBtn.addEventListener('click', toggleTheme);
+}
+
+// Aplica o tema salvo ou escuro por padrão
+const saved = localStorage.getItem('liora_theme') || 'dark';
+applyTheme(saved);
 
 // ==========================================================
 // 📦 ESTADO GLOBAL
@@ -61,46 +70,50 @@ const updateCtx = () => els.ctx.textContent = `${state.materialTexto ? 'Material
 // ==========================================================
 // 📖 LEITURA DE ARQUIVOS (TXT, PDF, DOCX)
 // ==========================================================
-async function readFileContent(file){
+async function readFileContent(file) {
   const ext = (file.name.split('.').pop() || '').toLowerCase();
   setStatus(`⏳ Processando arquivo...`);
-  if(ext === 'txt'){
-    return new Promise(res=>{
+
+  if (ext === 'txt') {
+    return new Promise(res => {
       const r = new FileReader();
-      r.onload = ()=> res(r.result.toString());
+      r.onload = () => res(r.result.toString());
       r.readAsText(file, 'utf-8');
     });
   }
-  if(ext === 'pdf' && window.pdfjsLib){
+
+  if (ext === 'pdf' && window.pdfjsLib) {
     const buf = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
     let text = '';
-    for(let i=1; i<=pdf.numPages; i++){
+    for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const c = await page.getTextContent();
-      text += c.items.map(it=>it.str).join(' ') + '\n';
+      text += c.items.map(it => it.str).join(' ') + '\n';
     }
     setStatus(`✅ PDF lido com sucesso (${pdf.numPages} páginas)`);
     return text;
   }
-  if(ext === 'docx' && window.mammoth){
+
+  if (ext === 'docx' && window.mammoth) {
     const buf = await file.arrayBuffer();
-    const result = await mammoth.extractRawText({arrayBuffer:buf});
+    const result = await mammoth.extractRawText({ arrayBuffer: buf });
     setStatus(`✅ Documento DOCX convertido.`);
     return result.value;
   }
+
   setStatus('⚠️ Formato não suportado. Use TXT, PDF ou DOCX.');
   return '';
 }
 
-if(els.inpFile){
-  els.inpFile.addEventListener('change', async (e)=>{
+if (els.inpFile) {
+  els.inpFile.addEventListener('change', async e => {
     const f = e.target.files?.[0];
-    if(!f) return;
+    if (!f) return;
     const text = await readFileContent(f);
-    if(text){
+    if (text) {
       state.materialTexto = text;
-      state.tema = state.tema || f.name.replace(/\.(pdf|txt|docx?)$/i,'');
+      state.tema = state.tema || f.name.replace(/\.(pdf|txt|docx?)$/i, '');
       updateCtx();
     }
   });
@@ -109,13 +122,13 @@ if(els.inpFile){
 // ==========================================================
 // 📅 GERAÇÃO DO PLANO DE ESTUDO
 // ==========================================================
-function extrairTopicos(texto, tema, n){
+function extrairTopicos(texto, tema, n) {
   let cand = [];
-  if(texto){
-    const linhas = texto.split(/\n+/).map(s=>s.trim()).filter(Boolean);
-    cand = linhas.filter(s=> s.split(' ').length < 10).slice(0,60);
+  if (texto) {
+    const linhas = texto.split(/\n+/).map(s => s.trim()).filter(Boolean);
+    cand = linhas.filter(s => s.split(' ').length < 10).slice(0, 60);
   }
-  if(!cand.length){
+  if (!cand.length) {
     cand = [
       `Introdução ao tema ${tema}`,
       'Conceitos principais',
@@ -124,20 +137,20 @@ function extrairTopicos(texto, tema, n){
       'Síntese final'
     ];
   }
-  return cand.slice(0,n);
+  return cand.slice(0, n);
 }
 
-function descrever(t, tema){
+function descrever(t, tema) {
   return `Sessão sobre ${t}, parte do tema ${tema}. Revisar conceitos e aplicar em exemplos.`;
 }
 
-function construirPlano(topicos, dias, tema){
+function construirPlano(topicos, dias, tema) {
   const plano = [];
-  for(let i=0; i<dias; i++){
+  for (let i = 0; i < dias; i++) {
     const t = topicos[i % topicos.length];
     plano.push({
-      dia: i+1,
-      titulo: `Sessão ${i+1}`,
+      dia: i + 1,
+      titulo: `Sessão ${i + 1}`,
       topico: t,
       descricao: descrever(t, tema)
     });
@@ -145,13 +158,13 @@ function construirPlano(topicos, dias, tema){
   return plano;
 }
 
-function renderPlano(){
+function renderPlano() {
   els.plano.innerHTML = '';
-  if(!state.plano.length){
+  if (!state.plano.length) {
     els.plano.innerHTML = '<p class="text-sm text-[var(--muted)]">Crie um plano de estudo ao lado e ele aparecerá aqui.</p>';
     return;
   }
-  state.plano.forEach(p=>{
+  state.plano.forEach(p => {
     const d = document.createElement('div');
     d.className = 'session-card';
     d.innerHTML = `
@@ -162,10 +175,10 @@ function renderPlano(){
   });
 }
 
-if(els.btnGerar){
-  els.btnGerar.addEventListener('click', ()=>{
+if (els.btnGerar) {
+  els.btnGerar.addEventListener('click', () => {
     state.tema = els.inpTema.value.trim();
-    if(!state.tema && !state.materialTexto){
+    if (!state.tema && !state.materialTexto) {
       alert('Defina um tema ou envie um material.');
       return;
     }
@@ -182,35 +195,35 @@ if(els.btnGerar){
 // ==========================================================
 const FORMATOS = {
   concursos: [
-    {id:'cespe', label:'CESPE (Certo/Errado)'},
-    {id:'fgv', label:'FGV (5 alternativas)'},
-    {id:'vunesp', label:'VUNESP (4 alternativas)'}
+    { id: 'cespe', label: 'CESPE (Certo/Errado)' },
+    { id: 'fgv', label: 'FGV (5 alternativas)' },
+    { id: 'vunesp', label: 'VUNESP (4 alternativas)' }
   ],
   exames: [
-    {id:'enem', label:'ENEM (5 alternativas)'},
-    {id:'enade', label:'ENADE (objetivas)'},
-    {id:'enamed', label:'ENAMED (casos clínicos)'}
+    { id: 'enem', label: 'ENEM (5 alternativas)' },
+    { id: 'enade', label: 'ENADE (objetivas)' },
+    { id: 'enamed', label: 'ENAMED (casos clínicos)' }
   ],
   ti: [
-    {id:'aws', label:'AWS (4 alternativas)'},
-    {id:'az900', label:'AZ-900 (4 alternativas)'},
-    {id:'gcp', label:'GCP (4 alternativas)'}
+    { id: 'aws', label: 'AWS (4 alternativas)' },
+    { id: 'az900', label: 'AZ-900 (4 alternativas)' },
+    { id: 'gcp', label: 'GCP (4 alternativas)' }
   ],
   mf: [
-    {id:'cpa10', label:'CPA-10 (5 alternativas)'},
-    {id:'cpa20', label:'CPA-20 (5 alternativas)'},
-    {id:'cea', label:'CEA (5 alternativas)'}
+    { id: 'cpa10', label: 'CPA-10 (5 alternativas)' },
+    { id: 'cpa20', label: 'CPA-20 (5 alternativas)' },
+    { id: 'cea', label: 'CEA (5 alternativas)' }
   ],
   outros: [
-    {id:'generico', label:'Geral (4 alternativas)'}
+    { id: 'generico', label: 'Geral (4 alternativas)' }
   ]
 };
 
-function hydrateFormatos(){
+function hydrateFormatos() {
   const cat = els.selCat.value || 'concursos';
   const list = FORMATOS[cat] || [];
   els.selFormato.innerHTML = '';
-  list.forEach(f=>{
+  list.forEach(f => {
     const opt = document.createElement('option');
     opt.value = f.id;
     opt.textContent = f.label;
@@ -220,12 +233,12 @@ function hydrateFormatos(){
   atualizarBotao();
 }
 
-function atualizarBotao(){
+function atualizarBotao() {
   const textoFmt = els.selFormato.options[els.selFormato.selectedIndex]?.text || '';
   els.btnSim.textContent = textoFmt ? `Gerar simulado (${textoFmt})` : 'Gerar simulado';
 }
 
-els.selCat.addEventListener('change', ()=>{ hydrateFormatos(); });
+els.selCat.addEventListener('change', () => hydrateFormatos());
 els.selFormato.addEventListener('change', atualizarBotao);
 
 // ==========================================================
