@@ -86,7 +86,7 @@
     .loading { display:inline-block; animation:spin 1s linear infinite; }
     @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
 
-    input, select {
+    input {
       background:transparent;
       border:1px solid var(--stroke);
       border-radius:8px;
@@ -95,7 +95,7 @@
       color:var(--fg);
       transition:border 0.3s ease, box-shadow 0.3s ease;
     }
-    input:focus, select:focus {
+    input:focus {
       border-color:var(--brand);
       box-shadow:0 0 0 2px rgba(196,75,4,0.3);
       outline:none;
@@ -143,9 +143,7 @@
       <div class="text-center my-2 text-xs text-[var(--muted)]">ou</div>
 
       <label class="block text-sm font-medium mb-1">Upload de material</label>
-      <input id="inp-file" type="file"
-        accept=".pdf,application/pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
-        class="text-sm" />
+      <input id="inp-file" type="file" class="text-sm" />
       <p class="text-[11px] text-[var(--muted)] mt-2">
         Envie um arquivo <strong>TXT</strong>, <strong>PDF</strong> ou <strong>DOCX</strong> para gerar o plano.
       </p>
@@ -201,7 +199,6 @@
     setTheme(savedTheme || 'dark');
 
     // ===== Lógica de arquivos =====
-    const STATE_KEY = 'liora_study_v2';
     const state = { tema:'', dias:5, materialTexto:'', plano:[] };
 
     const $ = id => document.getElementById(id);
