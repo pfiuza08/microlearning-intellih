@@ -6,6 +6,8 @@
   <title>Liora — Espaço de Estudo</title>
   <meta name="description" content="Liora é um espaço inteligente e tranquilo de estudo guiado, com temas personalizáveis e simulados interativos." />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
   <style>
     :root {
       --brand:#c44b04;
@@ -90,6 +92,12 @@
       width:10px; height:10px; border-radius:50%; background:#10b981; display:inline-block; margin-left:.5rem;
     }
 
+    .loading {
+      display:inline-block;
+      animation:spin 1s linear infinite;
+    }
+    @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
     .kbd {
       border:1px solid var(--stroke);
       border-radius:6px;
@@ -123,7 +131,7 @@
         <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-white font-black" style="background:var(--brand)">Li</div>
         <div>
           <h1 class="text-xl font-bold">Liora — Espaço de Estudo <span class="dot" title="online"></span></h1>
-          <p class="text-sm text-[var(--muted)]">Ambiente inteligente e tranquilo para aprender com foco e leveza.</p>
+          <p class="text-sm text-[var(--muted)]">Ambiente inteligente para aprender com foco.</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -137,7 +145,7 @@
   <main class="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-3 gap-6">
     <section class="lg:col-span-1 card p-5">
       <h2 class="section-title mb-1">Configurar estudo</h2>
-      <p class="text-sm text-[var(--muted)] mb-4">Escolha um tema ou envie seu material para criar um plano personalizado com sessões, desafios e simulados.</p>
+      <p class="text-sm text-[var(--muted)] mb-4">Escolha um tema ou envie seu material para criar um plano personalizado com sessões de aprendizado.</p>
 
       <label class="block text-sm font-medium mb-1">Tema</label>
       <input id="inp-tema" type="text" placeholder="Ex.: IA Generativa, História, Biologia" class="mb-3" />
@@ -145,33 +153,12 @@
       <div class="text-center my-2 text-xs text-[var(--muted)]">ou</div>
 
       <label class="block text-sm font-medium mb-1">Upload de material</label>
-     <input id="inp-file" type="file"
-        accept=".pdf,application/pdf,.txt,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
-        class="text-sm" />
-      <p class="text-[11px] text-[var(--muted)] mt-2">Arquivos TXT oferecem melhor resultado neste protótipo.</p>
+      <input id="inp-file" type="file" accept="*/*" class="text-sm" />
+      <p class="text-[11px] text-[var(--muted)] mt-2">Arquivos TXT, PDF e DOCX são suportados neste protótipo.</p>
 
-      <div class="mt-4 grid grid-cols-2 gap-3">
-        <div>
-          <label class="block text-sm font-medium mb-1">Formato</label>
-          <select id="sel-pad">
-            <option value="ENEM">ENEM</option>
-            <option value="ENAMED">ENAMED</option>
-            <option value="OAB">OAB</option>
-            <option value="CESPE">CESPE (V/F)</option>
-            <option value="GERAL">Geral</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium mb-1">Sessões</label>
-          <select id="sel-dias">
-            <option>5</option>
-            <option>7</option>
-            <option>10</option>
-          </select>
-        </div>
+      <div class="mt-4 grid grid-cols-1">
+        <button id="btn-gerar" class="btn w-full">Gerar plano de estudo</button>
       </div>
-
-      <button id="btn-gerar" class="btn w-full mt-5">Gerar plano</button>
       <p id="status" class="text-xs text-[var(--muted)] mt-2"></p>
     </section>
 
@@ -221,20 +208,70 @@
     const savedTheme = localStorage.getItem('liora_theme');
     setTheme(savedTheme || 'dark');
 
-    // ===== Geração dinâmica de sessões =====
+    // ===== Lógica de arquivos =====
     const STATE_KEY = 'liora_study_v2';
-    const state = { tema:'', padrao:'ENEM', dias:5, materialTexto:'', plano:[] };
+    const state = { tema:'', dias:5, materialTexto:'', plano:[] };
 
     const $ = id => document.getElementById(id);
-    const els = { inpTema:$('inp-tema'), inpFile:$('inp-file'), selPad:$('sel-pad'), selDias:$('sel-dias'), btnGerar:$('btn-gerar'), status:$('status'), ctx:$('ctx'), plano:$('plano') };
+    const els = { inpTema:$('inp-tema'), inpFile:$('inp-file'), btnGerar:$('btn-gerar'), status:$('status'), ctx:$('ctx'), plano:$('plano') };
 
     const save = () => localStorage.setItem(STATE_KEY, JSON.stringify(state));
     const load = () => { try { Object.assign(state, JSON.parse(localStorage.getItem(STATE_KEY)) || {}); } catch(e){} };
     load();
 
-    const setStatus = msg => els.status.textContent = msg;
-    const updateCtx = () => els.ctx.textContent = `${state.materialTexto ? 'Material enviado' : (state.tema || 'Sem tema')} · Formato: ${state.padrao} · ${state.dias} sessões`;
+    const setStatus = msg => els.status.innerHTML = msg;
+    const updateCtx = () => els.ctx.textContent = `${state.materialTexto ? 'Material enviado' : (state.tema || 'Sem tema')} · ${state.dias} sessões`;
 
+    async function readFileContent(file){
+      const ext = file.name.split('.').pop().toLowerCase();
+      setStatus(`<span class='loading'>⏳</span> Processando arquivo...`);
+
+      if(ext === 'txt'){
+        return new Promise((res)=>{
+          const reader = new FileReader();
+          reader.onload = ()=> res(reader.result.toString());
+          reader.readAsText(file,'utf-8');
+        });
+      }
+
+      if(ext === 'pdf'){
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({data:arrayBuffer}).promise;
+        let text = '';
+        for(let i=1;i<=pdf.numPages;i++){
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          text += content.items.map(it=>it.str).join(' ') + '\n';
+        }
+        setStatus(`✅ PDF lido com sucesso (${pdf.numPages} páginas)`);
+        return text;
+      }
+
+      if(ext === 'docx'){
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({arrayBuffer});
+        setStatus(`✅ Documento DOCX convertido.`);
+        return result.value;
+      }
+
+      setStatus('⚠️ Formato não suportado. Use TXT, PDF ou DOCX.');
+      return '';
+    }
+
+    if(els.inpFile){
+      els.inpFile.addEventListener('change', async (e)=>{
+        const f = e.target.files?.[0]; if(!f) return;
+        const text = await readFileContent(f);
+        if(text){
+          state.materialTexto = text;
+          state.tema = state.tema || f.name.replace(/\.(pdf|txt|docx?)$/i,'');
+          save();
+          updateCtx();
+        }
+      });
+    }
+
+    // ===== Geração de plano =====
     function extrairTopicos(texto, tema, n){
       let candidatos = [];
       if(texto){
@@ -277,8 +314,7 @@
     if(els.btnGerar){
       els.btnGerar.addEventListener('click',()=>{
         state.tema=els.inpTema.value.trim();
-        state.padrao=els.selPad.value;
-        state.dias=parseInt(els.selDias.value,10);
+        state.dias=5;
         if(!state.tema && !state.materialTexto){
           alert('Defina um tema ou envie um material.');
           return;
@@ -297,4 +333,3 @@
   </script>
 </body>
 </html>
-
