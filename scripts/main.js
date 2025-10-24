@@ -1,4 +1,9 @@
 // ==========================================================
+// 🌙 GARANTE O TEMA ESCURO AO INICIAR
+// ==========================================================
+document.body.classList.add('dark');
+
+// ==========================================================
 // 🎨 TEMA (claro/escuro)
 // ==========================================================
 const themeBtn = document.getElementById('btn-theme');
@@ -223,6 +228,9 @@ function atualizarBotao(){
 els.selCat.addEventListener('change', ()=>{ hydrateFormatos(); });
 els.selFormato.addEventListener('change', atualizarBotao);
 
+// ==========================================================
+// 🚀 INICIALIZAÇÃO
+// ==========================================================
 hydrateFormatos();
 renderPlano();
 updateCtx();
