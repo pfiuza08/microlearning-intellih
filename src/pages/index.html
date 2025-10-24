@@ -8,110 +8,47 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    }
   </script>
   <script src="https://unpkg.com/mammoth/mammoth.browser.min.js"></script>
   <style>
-    :root {
-      --brand:#c44b04;
-      --bg:#0b0b0b;
-      --fg:#ffffff;
-      --card:#151515;
-      --muted:#bfbfbf;
-      --stroke:#252525;
-      --shadow:0 2px 8px rgba(0,0,0,0.4);
-    }
-
-    body.light {
-      --brand:#f4a261;
-      --bg:#faf7f2;
-      --fg:#1e1e1e;
-      --card:#ffffff;
-      --muted:#6b6b6b;
-      --stroke:#e0ddd8;
-      --shadow:0 2px 10px rgba(0,0,0,0.1);
-    }
-
-    html, body {
-      height:100%;
-      transition: background-color 0.4s ease, color 0.4s ease;
-    }
-
-    body {
-      background:var(--bg);
-      color:var(--fg);
-      font-family:'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif;
-      line-height:1.7;
-      opacity:1;
-      transition: opacity 0.4s ease, background-color 0.4s ease, color 0.4s ease;
-    }
-
+    :root { --brand:#c44b04; --bg:#0b0b0b; --fg:#ffffff; --card:#151515; --muted:#bfbfbf; --stroke:#252525; --shadow:0 2px 8px rgba(0,0,0,0.4); }
+    body.light { --brand:#f4a261; --bg:#faf7f2; --fg:#1e1e1e; --card:#ffffff; --muted:#6b6b6b; --stroke:#e0ddd8; --shadow:0 2px 10px rgba(0,0,0,0.1); }
+    html, body { height:100%; transition: background-color 0.4s ease, color 0.4s ease; }
+    body { background:var(--bg); color:var(--fg); font-family:'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", sans-serif; line-height:1.7; opacity:1; transition: opacity 0.4s ease, background-color 0.4s ease, color 0.4s ease; }
     body.fading { opacity:0; }
 
-    .card {
-      background:var(--card);
-      border:1px solid var(--stroke);
-      border-radius:1rem;
-      box-shadow:var(--shadow);
-      transition:background-color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease;
-    }
+    .card { background:var(--card); border:1px solid var(--stroke); border-radius:1rem; box-shadow:var(--shadow); transition:background-color 0.4s ease, box-shadow 0.4s ease, transform 0.3s ease; }
     .card:hover { transform:translateY(-2px); box-shadow:0 4px 16px rgba(0,0,0,0.5); }
 
-    .btn {
-      background:var(--brand);
-      color:#fff;
-      border-radius:16px;
-      padding:.7rem 1rem;
-      font-weight:600;
-      transition:background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-      box-shadow:0 0 6px rgba(196,75,4,0.4);
-    }
+    .btn { background:var(--brand); color:#fff; border-radius:16px; padding:.7rem 1rem; font-weight:600; transition:background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease; box-shadow:0 0 6px rgba(196,75,4,0.4); }
     .btn:hover { background:#d75b0a; transform:translateY(-1px); box-shadow:0 0 10px rgba(196,75,4,0.6); }
 
-    .chip {
-      border:1px solid var(--stroke);
-      border-radius:999px;
-      padding:.35rem .7rem;
-      color:var(--muted);
-      transition:background 0.3s ease, color 0.3s ease;
-      display:inline-flex; align-items:center; justify-content:center;
-    }
+    .chip { border:1px solid var(--stroke); border-radius:999px; padding:.35rem .7rem; color:var(--muted); transition:background 0.3s ease, color 0.3s ease; display:inline-flex; align-items:center; justify-content:center; }
     .chip:hover { background:var(--brand); color:#fff; }
 
     #btn-theme { font-size:1rem; cursor:pointer; transform:rotate(0deg); }
     #btn-theme.rotate { transform:rotate(180deg); }
 
-    .dot {
-      width:10px; height:10px; border-radius:50%;
-      background:#10b981; display:inline-block; margin-left:.5rem;
-    }
+    .dot { width:10px; height:10px; border-radius:50%; background:#10b981; display:inline-block; margin-left:.5rem; }
 
     .loading { display:inline-block; animation:spin 1s linear infinite; }
     @keyframes spin { from{transform:rotate(0)} to{transform:rotate(360deg)} }
 
-    input {
-      background:transparent;
-      border:1px solid var(--stroke);
-      border-radius:8px;
-      padding:.5rem .75rem;
-      width:100%;
-      color:var(--fg);
-      transition:border 0.3s ease, box-shadow 0.3s ease;
-    }
-    input:focus {
-      border-color:var(--brand);
-      box-shadow:0 0 0 2px rgba(196,75,4,0.3);
-      outline:none;
-    }
+    input, select { background:transparent; border:1px solid var(--stroke); border-radius:8px; padding:.5rem .75rem; width:100%; color:var(--fg); transition:border 0.3s ease, box-shadow 0.3s ease; }
+    input:focus, select:focus { border-color:var(--brand); box-shadow:0 0 0 2px rgba(196,75,4,0.3); outline:none; }
 
     .section-title { font-weight:600; color:var(--brand); }
-    .session-card {
-      background:var(--card);
-      border:1px solid var(--stroke);
-      border-radius:1rem;
-      padding:1rem;
-      box-shadow:var(--shadow);
-    }
+    .session-card, .qcard { background:var(--card); border:1px solid var(--stroke); border-radius:1rem; padding:1rem; box-shadow:var(--shadow); }
+    .opt { border:1px solid var(--stroke); border-radius:10px; padding:.6rem .8rem; cursor:pointer; transition: border-color .2s ease; }
+    .opt:hover { border-color:var(--brand); }
+    .opt.correct { border-color:#10b981; }
+    .opt.wrong { border-color:#ef4444; }
+
+    .bar { width:100%; height:10px; background:rgba(255,255,255,0.06); border-radius:9999px; overflow:hidden; border:1px solid var(--stroke); }
+    .bar > div { height:100%; background:var(--brand); width:0%; transition:width .3s ease; }
   </style>
 </head>
 
@@ -134,11 +71,10 @@
   </header>
 
   <main class="max-w-5xl mx-auto px-4 py-8 grid lg:grid-cols-3 gap-6">
+    <!-- Configurar estudo -->
     <section class="lg:col-span-1 card p-5">
       <h2 class="section-title mb-1">Configurar estudo</h2>
-      <p class="text-sm text-[var(--muted)] mb-4">
-        Escolha um tema ou envie seu material para gerar um plano personalizado de aprendizado.
-      </p>
+      <p class="text-sm text-[var(--muted)] mb-4">Escolha um tema ou envie seu material para gerar um plano personalizado de aprendizado.</p>
 
       <label class="block text-sm font-medium mb-1">Tema</label>
       <input id="inp-tema" type="text" placeholder="Ex.: IA Generativa, História, Biologia" class="mb-3" />
@@ -147,20 +83,67 @@
 
       <label class="block text-sm font-medium mb-1">Upload de material</label>
       <input id="inp-file" type="file" class="text-sm" />
-      <p class="text-[11px] text-[var(--muted)] mt-2">
-        Envie um arquivo <strong>TXT</strong>, <strong>PDF</strong> ou <strong>DOCX</strong> para gerar o plano.
-      </p>
+      <p class="text-[11px] text-[var(--muted)] mt-2">Envie um arquivo <strong>TXT</strong>, <strong>PDF</strong> ou <strong>DOCX</strong> para gerar o plano.</p>
 
       <button id="btn-gerar" class="btn w-full mt-5">Gerar plano de estudo</button>
       <p id="status" class="text-xs text-[var(--muted)] mt-2"></p>
     </section>
 
+    <!-- Plano gerado -->
     <section class="lg:col-span-2 card p-5">
       <div class="flex items-center justify-between mb-3">
         <h2 class="section-title">Seu plano de estudo</h2>
         <div class="text-sm text-[var(--muted)]" id="ctx"></div>
       </div>
       <div id="plano" class="space-y-3"></div>
+    </section>
+
+    <!-- Simulados -->
+    <section class="lg:col-span-3 card p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="section-title">Gerar simulado</h2>
+        <div class="text-sm text-[var(--muted)]">Baseado no seu tema/material</div>
+      </div>
+
+      <div class="grid md:grid-cols-5 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Categoria</label>
+          <select id="sel-cat">
+            <option value="concursos">Concursos</option>
+            <option value="exames">Exames Nacionais</option>
+            <option value="ti">Certificações TI</option>
+            <option value="mf">Certificações MF</option>
+            <option value="outros">Outros</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Formato</label>
+          <select id="sel-formato"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Quantidade</label>
+          <select id="sel-qtd">
+            <option>5</option>
+            <option>10</option>
+            <option>15</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Idioma</label>
+          <select id="sel-lang">
+            <option value="pt">Português</option>
+            <option value="en">Inglês</option>
+          </select>
+        </div>
+        <div class="flex items-end"><button id="btn-simulado" class="btn w-full">Gerar simulado</button></div>
+      </div>
+
+      <div class="mt-4">
+        <div class="bar"><div id="bar-progress"></div></div>
+        <div id="resultado" class="mt-2 text-sm text-[var(--muted)]"></div>
+      </div>
+
+      <div id="simulado" class="mt-4 space-y-3"></div>
     </section>
   </main>
 
@@ -169,161 +152,43 @@
   </footer>
 
   <script>
-    // ===== Tema =====
+    // === Tema ===
     const themeBtn = document.getElementById('btn-theme');
     const body = document.body;
+    function setTheme(mode){ body.classList.add('fading'); themeBtn.classList.add('rotate'); setTimeout(()=>{ if(mode==='light'){ body.classList.add('light'); localStorage.setItem('liora_theme','light'); themeBtn.textContent='☀️'; } else { body.classList.remove('light'); localStorage.setItem('liora_theme','dark'); themeBtn.textContent='🌙'; } setTimeout(()=>{ body.classList.remove('fading'); themeBtn.classList.remove('rotate'); },200); },150); }
+    themeBtn.addEventListener('click',()=>{ const current = body.classList.contains('light') ? 'light':'dark'; setTheme(current==='light'?'dark':'light'); });
+    setTheme(localStorage.getItem('liora_theme')||'dark');
 
-    function setTheme(mode){
-      body.classList.add('fading');
-      themeBtn.classList.add('rotate');
-      setTimeout(()=>{
-        if(mode === 'light'){
-          body.classList.add('light');
-          localStorage.setItem('liora_theme','light');
-          themeBtn.textContent = '☀️';
-        } else {
-          body.classList.remove('light');
-          localStorage.setItem('liora_theme','dark');
-          themeBtn.textContent = '🌙';
-        }
-        setTimeout(()=> {
-          body.classList.remove('fading');
-          themeBtn.classList.remove('rotate');
-        },200);
-      },150);
-    }
-
-    themeBtn.addEventListener('click',()=>{
-      const current = body.classList.contains('light') ? 'light' : 'dark';
-      setTheme(current === 'light' ? 'dark' : 'light');
-    });
-
-    const savedTheme = localStorage.getItem('liora_theme');
-    setTheme(savedTheme || 'dark');
-
-    // ===== Lógica de arquivos =====
-    const state = { tema:'', dias:5, materialTexto:'', plano:[] };
-
+    // === Estado global ===
+    const state = { tema:'', dias:5, materialTexto:'', plano:[], simulado:{categoria:'', formato:'', lang:'pt', questoes:[], respostas:{}} };
     const $ = id => document.getElementById(id);
-    const els = {
-      inpTema:$('inp-tema'),
-      inpFile:$('inp-file'),
-      btnGerar:$('btn-gerar'),
-      status:$('status'),
-      ctx:$('ctx'),
-      plano:$('plano')
+    const els = { selCat:$('sel-cat'), selFormato:$('sel-formato'), btnSim:$('btn-simulado') };
+
+    // === Formatos por categoria ===
+    const FORMATOS = {
+      concursos: [ {id:'cespe', label:'CESPE (Certo/Errado)'}, {id:'fgv', label:'FGV (5 alternativas)'}, {id:'vunesp', label:'VUNESP (4 alternativas)'} ],
+      exames:    [ {id:'enem', label:'ENEM (5 alternativas)'}, {id:'enade', label:'ENADE (objetivas)'}, {id:'enamed', label:'ENAMED (casos clínicos)'} ],
+      ti:        [ {id:'aws', label:'AWS (4 alternativas)'}, {id:'az900', label:'AZ-900 (4 alternativas)'}, {id:'gcp', label:'GCP (4 alternativas)'} ],
+      mf:        [ {id:'cpa10', label:'CPA-10 (5 alternativas)'}, {id:'cpa20', label:'CPA-20 (5 alternativas)'}, {id:'cea', label:'CEA (5 alternativas)'} ],
+      outros:    [ {id:'generico', label:'Geral (4 alternativas)'} ]
     };
 
-    const setStatus = msg => els.status.innerHTML = msg;
-    const updateCtx = () => els.ctx.textContent = `${state.materialTexto ? 'Material enviado' : (state.tema || 'Sem tema')} · ${state.dias} sessões`;
-
-    async function readFileContent(file){
-      const ext = file.name.split('.').pop().toLowerCase();
-      setStatus(`<span class='loading'>⏳</span> Processando arquivo...`);
-
-      if(ext === 'txt'){
-        return new Promise(res=>{
-          const reader = new FileReader();
-          reader.onload = ()=> res(reader.result.toString());
-          reader.readAsText(file,'utf-8');
-        });
-      }
-
-      if(ext === 'pdf'){
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({data:arrayBuffer}).promise;
-        let text = '';
-        for(let i=1;i<=pdf.numPages;i++){
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map(it=>it.str).join(' ') + '\\n';
-        }
-        setStatus(`✅ PDF lido com sucesso (${pdf.numPages} páginas)`);
-        return text;
-      }
-
-      if(ext === 'docx'){
-        const arrayBuffer = await file.arrayBuffer();
-        const result = await mammoth.extractRawText({arrayBuffer});
-        setStatus(`✅ Documento DOCX convertido.`);
-        return result.value;
-      }
-
-      setStatus('⚠️ Formato não suportado. Use TXT, PDF ou DOCX.');
-      return '';
+    function hydrateFormatos(){
+      const cat = els.selCat.value || 'concursos';
+      const list = FORMATOS[cat] || [];
+      els.selFormato.innerHTML = list.map(f=>`<option value="${f.id}">${f.label}</option>`).join('');
+      atualizarBotao();
     }
 
-    if(els.inpFile){
-      els.inpFile.addEventListener('change', async (e)=>{
-        const f = e.target.files?.[0]; if(!f) return;
-        const text = await readFileContent(f);
-        if(text){
-          state.materialTexto = text;
-          state.tema = state.tema || f.name.replace(/\\.(pdf|txt|docx?)$/i,'');
-          updateCtx();
-        }
-      });
+    function atualizarBotao(){
+      const fmt = els.selFormato.value || '';
+      els.btnSim.textContent = fmt ? `Gerar simulado (${fmt.toUpperCase()})` : 'Gerar simulado';
     }
 
-    function extrairTopicos(texto, tema, n){
-      let candidatos = [];
-      if(texto){
-        const linhas = texto.split(/\\n+/).map(s=>s.trim()).filter(Boolean);
-        candidatos = linhas.filter(s=>s.split(' ').length<10).slice(0,60);
-      }
-      if(!candidatos.length){
-        candidatos = [`Introdução ao tema ${tema}`, 'Conceitos principais', 'Aplicações práticas', 'Revisão', 'Síntese final'];
-      }
-      return candidatos.slice(0,n);
-    }
+    els.selCat.addEventListener('change', ()=>{ hydrateFormatos(); atualizarBotao(); });
+    els.selFormato.addEventListener('change', atualizarBotao);
 
-    function descrever(topico, tema){
-      return `Sessão sobre ${topico}, parte do tema ${tema}. Revisar conceitos e aplicar em exemplos.`;
-    }
-
-    function construirPlano(topicos,dias,tema){
-      const plano=[];
-      for(let i=0;i<dias;i++){
-        const t=topicos[i%topicos.length];
-        plano.push({dia:i+1,titulo:`Sessão ${i+1}`,topico:t,descricao:descrever(t,tema)});
-      }
-      return plano;
-    }
-
-    function renderPlano(){
-      els.plano.innerHTML='';
-      if(!state.plano.length){
-        els.plano.innerHTML='<p class="text-sm text-[var(--muted)]">Crie um plano de estudo ao lado e ele aparecerá aqui.</p>';
-        return;
-      }
-      state.plano.forEach(p=>{
-        const div=document.createElement('div');
-        div.className='session-card';
-        div.innerHTML=`<div class="text-sm font-semibold mb-1">${p.titulo}</div>
-                       <div class="text-sm text-[var(--muted)] mb-1">${p.topico}</div>
-                       <p class="text-sm">${p.descricao}</p>`;
-        els.plano.appendChild(div);
-      });
-    }
-
-    if(els.btnGerar){
-      els.btnGerar.addEventListener('click',()=>{
-        state.tema=els.inpTema.value.trim();
-        if(!state.tema && !state.materialTexto){
-          alert('Defina um tema ou envie um material.');
-          return;
-        }
-        const topicos=extrairTopicos(state.materialTexto,state.tema,state.dias);
-        state.plano=construirPlano(topicos,state.dias,state.tema);
-        updateCtx();
-        renderPlano();
-        setStatus('Plano criado com sucesso!');
-      });
-    }
-
-    renderPlano();
-    updateCtx();
+    hydrateFormatos(); // inicializa com Concursos
   </script>
 </body>
 </html>
-
